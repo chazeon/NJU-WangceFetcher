@@ -188,9 +188,13 @@ class MyHTMLParser(HTMLParser):
         print(counter)
         print("(%s)" % ",".join(str(len(globals()["li_"+str(i)])) for i in range(1, 6)))
         
-def aConnection(url, cookie):
+def aConnection(url, stdNo):
     conn = http.client.HTTPConnection('172.25.54.72:8088')
-    conn.request('GET', url, headers={'Cookie':'ASP.NET_SessionId=' + cookie})
+    conn.request('GET', '/usercontrol/ajax.aspx?username=%d&pwd=%s&func=Login' % (stdNo, stdNo))
+    r0 = conn.getresponse()
+    cookie = r0.getheader('Set-Cookie')
+    conn = http.client.HTTPConnection('172.25.54.72:8088')
+    conn.request('GET', url, headers={'Cookie': cookie})
     r1 = conn.getresponse()
     s = r1.read()
     fsave = open("save.out", "a")
@@ -277,17 +281,18 @@ def format_output(length = 80, answertype = 0, debug = 0):
 #    if (i[-5:] == ".html" or i [-4:] == ".htm"):
 #       aLocal(i)
 
-#for i in range(20):
-#    aConnection("http://172.25.54.72:8088/Exam/User_Exam_Single.aspx?wkey=SJ&planid=176&planname=%E5%A4%A7%E5%AD%A6%E8%8B%B1%E8%AF%AD%E5%B1%82%E6%AC%A1%EF%BC%92%E7%AC%AC%E4%B8%80%E5%AD%A6%E6%9C%9F%E7%BB%83%E4%B9%A0unit1%20&time=100&point=100&passpoint=60&module=%E5%8D%95%E5%8D%B7&pid=117&examkey=&isanswer=%E6%98%BE%E7%A4%BA&return=User_Test_Query.aspx", "lgfsnv45ws4bi445kp0sa3qi")
+for i in range(20):
+    aConnection("http://172.25.54.72:8088/Exam/User_Exam_Single.aspx?wkey=SJ&planid=176&planname=%E5%A4%A7%E5%AD%A6%E8%8B%B1%E8%AF%AD%E5%B1%82%E6%AC%A1%EF%BC%92%E7%AC%AC%E4%B8%80%E5%AD%A6%E6%9C%9F%E7%BB%83%E4%B9%A0unit1%20&time=100&point=100&passpoint=60&module=%E5%8D%95%E5%8D%B7&pid=117&examkey=&isanswer=%E6%98%BE%E7%A4%BA&return=User_Test_Query.aspx", 000000000)
+format_output(80, 1, "output.txt")
 
-for i in os.listdir():
-    if (i [-4:] == ".out"):
-        print(i)
-        aLocal(i)
-        format_output(80, 1, i[:2]+"_end.txt")
-        format_output(80, 0, i[:2]+"_inline.txt")
-        li_1 = []
-        li_2 = []
-        li_3 = []
-        li_4 = []
-        li_5 = []
+#for i in os.listdir():
+#    if (i [-4:] == ".out"):
+#        print(i)
+#        aLocal(i)
+#        format_output(80, 1, i[:2]+"_end.txt")
+#        format_output(80, 0, i[:2]+"_inline.txt")
+#        li_1 = []
+#        li_2 = []
+#        li_3 = []
+#        li_4 = []
+#        li_5 = []
