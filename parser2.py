@@ -4,6 +4,7 @@ import re
 import http.client
 import sys
 import os
+import urllib.parse
 
 li_1 = []
 li_2 = []
@@ -145,6 +146,7 @@ class MyHTMLParser(HTMLParser):
         if self.pAnswer == True and data != "正确答案：":
             self.Answer = data[5:]
         if self.pChoice == True and self.QType == "Para":
+#            print(data)
             if self.Choices == []:
                 self.Choices.append(data)
             else:
@@ -174,6 +176,7 @@ class MyHTMLParser(HTMLParser):
         elif f[0] == '4':
             return "Filling"
         elif f[0] == '5':
+            self.Choices = ['']
             return "Para"
 
     def close(self):
@@ -189,20 +192,25 @@ class MyHTMLParser(HTMLParser):
         print("(%s)" % ",".join(str(len(globals()["li_"+str(i)])) for i in range(1, 6)))
         
 def aConnection(url, stdNo):
-    conn = http.client.HTTPConnection('172.25.54.72:8088')
+    conn = http.client.HTTPConnection('172.25.54.72')
     conn.request('GET', '/usercontrol/ajax.aspx?username=%d&pwd=%s&func=Login' % (stdNo, stdNo))
     r0 = conn.getresponse()
     cookie = r0.getheader('Set-Cookie')
-    conn = http.client.HTTPConnection('172.25.54.72:8088')
+    conn = http.client.HTTPConnection('172.25.54.72')
     conn.request('GET', url, headers={'Cookie': cookie})
     r1 = conn.getresponse()
     s = r1.read()
     fsave = open("save.out", "a")
     fsave.write(s.decode('utf-8'))
-    #print(s.decode('utf-8'))
+#    print(s.decode('utf-8'))
     parser = MyHTMLParser()
     parser.feed(s.decode('utf-8'))
     parser.close()
+    conn = http.client.HTTPConnection('172.25.54.72')
+    conn.request('GET', '/usercontrol/ajax.aspx?func=LoginOut', headers={'Cookie': cookie})
+    r2 = conn.getresponse()
+    s = r2.read()
+
 
 def aLocal(url):
     fsock = open(url)
@@ -232,7 +240,10 @@ def format_output(length = 80, answertype = 0, debug = 0):
         for i in globals()["li_" + str(j)]:
             counter += 1
             print("%d. %s" % (counter, i[1]))
-            if max([len(c) for c in i[2]]) < int(length / len(i[2])) and j == 1 or j == 3:
+            if max([len(c) for c in i[2]]) < int(length / len(i[2])) and (j == 1 or j == 3):
+                sys.stdout = outsave
+                #if j == 3: print(i, [c for c in i[2]] , int(length / len(i[2])))
+                sys.stdout = fsock
                 print("".join([c.ljust(int(length / len(i[2]))) for c in i[2]]))
             else:
                 for c in i[2]:
@@ -255,10 +266,14 @@ def format_output(length = 80, answertype = 0, debug = 0):
     for i in li_5:
         counter += 1
         print("%d. %s" % (counter, i[1]))
+#        try:
+            #print(i[2][0])
+#        except IndexError:
+#            print("Index ERROR:" ,i)
         print(i[2][0])
         if answertype == 0:
             print("答案：", i[3].replace("^", " "))
-        print("")
+        print("")        
     if answertype == 1:
         counter = 0
         print("答案")
@@ -277,13 +292,33 @@ def format_output(length = 80, answertype = 0, debug = 0):
         fsock.close()
 
 
-#for i in os.listdir():
-#    if (i[-5:] == ".html" or i [-4:] == ".htm"):
-#       aLocal(i)
+for i in os.listdir():
+    if (i[-5:] == ".html" or i [-4:] == ".htm"):
+       aLocal(i)
 
-for i in range(20):
-    aConnection("http://172.25.54.72:8088/Exam/User_Exam_Single.aspx?wkey=SJ&planid=176&planname=%E5%A4%A7%E5%AD%A6%E8%8B%B1%E8%AF%AD%E5%B1%82%E6%AC%A1%EF%BC%92%E7%AC%AC%E4%B8%80%E5%AD%A6%E6%9C%9F%E7%BB%83%E4%B9%A0unit1%20&time=100&point=100&passpoint=60&module=%E5%8D%95%E5%8D%B7&pid=117&examkey=&isanswer=%E6%98%BE%E7%A4%BA&return=User_Test_Query.aspx", 000000000)
-format_output(80, 1, "output.txt")
+#for i in range(1):
+#    aConnection("/Exam/User_Exam_Single.aspx?wkey=SJ&planid=180&planname=%E5%B1%82%E6%AC%A13%E7%AC%AC%E4%B8%80%E5%AD%A6%E6%9C%9F%E7%BB%83%E4%B9%A0unit1%20&time=100&point=100&passpoint=60&module=%E5%8D%95%E5%8D%B7&pid=136&examkey=&isanswer=%E6%98%BE%E7%A4%BA&return=User_Test_Query.aspx", 131140045)
+#format_output(80, 1, "u1_end.txt")
+#format_output(80, 0, "u1_inline.txt")
+li_1 = []
+li_2 = []
+li_3 = []
+li_4 = []
+li_5 = []
+
+#for i in range(40):
+#    aConnection("/Exam/" + joinExam(clientid, wkey, planid, planname, time, point, passpoint, module, pid, examkey, isanswer), 131190114)
+#print(li_5)
+#format_output(80, 1, "u4_end.txt")
+#format_output(80, 0, "u4_inline.txt")
+#li_1 = []
+#li_2 = []
+#li_3 = []
+#li_4 = []
+#li_5 = []
+
+
+
 
 #for i in os.listdir():
 #    if (i [-4:] == ".out"):
@@ -296,3 +331,110 @@ format_output(80, 1, "output.txt")
 #        li_3 = []
 #        li_4 = []
 #        li_5 = []
+
+
+def joinExam(clientid, wkey, planid, planname, time, point, passpoint, module, pid, examkey, isanswer):
+    if module == "整卷": url="User_Exam.aspx"
+    if module == "单卷": url="User_Exam_Single.aspx"
+    dUrl = {    "wkey" : wkey,
+        "planid": planid,
+        "planname": planname,
+        "time": time,
+        "point": point,
+        "passpoint": passpoint,
+        "module": module,
+        "pid": pid,
+        "examkey": examkey,
+        "isanswer": isanswer,
+        "return": "User_Exam_Query.aspx",
+    }
+    return url + "?" + urllib.parse.urlencode(dUrl)
+    
+class ExamDirFecher(HTMLParser):
+    def __init__(self):
+        HTMLParser.__init__(self)
+        self.inManageList = False
+        self.inItem = False
+        self.title = ""
+        self.liParseResult = []
+        self.recTitle = False
+        self.liTest = []
+    def handle_starttag(self, tag, attrs):
+        if tag == "div" and ("class", "ManageList") in attrs:
+            self.inManageList = True
+        if tag == "ul" and ("onmouseover", "this.style.backgroundColor='#f4fbf8'") in attrs and ("onmouseout", "this.style.backgroundColor='#ffffff'") in attrs:
+            self.inItem = True
+        if tag == "input" and ("value", "参加练习") in attrs:
+            dFunction = dict(attrs)
+            s = dFunction["onclick"]
+            pattern = "joinExam\('([^,']*)','([^,']*)','([^,']*)','([^,']*)','([^,']*)','([^,']*)','([^,']*)','([^,']*)','([^,']*)','([^,']*)','([^,']*)'\);"
+            t = re.findall(pattern, s)
+            self.liParseResult = list(t[0])
+            
+        if tag == "li" and ("style", "width: auto;") in attrs and self.inItem == True:
+            self.recTitle = True
+
+    def handle_endtag(self, tag):
+        if tag == "div" and self.inManageList == False:
+            self.inManageList = False
+        if tag == "li" and self.recTitle == True and self.inItem == True:
+            self.recTitle = False
+        if tag == "ul" and self.inItem == True:       
+            self.inItem = False
+            self.liTest.append((self.title.strip(), self.liParseResult))
+            self.title = ""
+            self.liParseResult = []
+    def handle_data(self, data):
+        if self.recTitle == True:
+            self.title = data
+    def close(self):
+        HTMLParser.close(self)
+        return self.liTest
+
+def CommandUI():
+    print("Please input number before Student Number:")
+    stdNo = int(sys.stdin.readline())
+    conn = http.client.HTTPConnection('172.25.54.72')
+    conn.request('GET', '/usercontrol/ajax.aspx?username=%d&pwd=%s&func=Login' % (stdNo, stdNo))
+    r0 = conn.getresponse()
+    cookie = r0.getheader('Set-Cookie')
+    conn = http.client.HTTPConnection('172.25.54.72')
+    conn.request('GET', '/Exam/User_Test_Query.aspx', headers={'Cookie': cookie})
+    r1 = conn.getresponse()
+    s = r1.read()
+#    print(s.decode('utf-8'))
+    parser = ExamDirFecher()
+    parser.feed(s.decode('utf-8'))
+    liTest = parser.close()
+#    print(liTest)
+    counter = 0
+    for i in liTest:
+        counter += 1
+        print(str("[" + str(counter) + "]").ljust(3), i[0])
+    print("Please input number before title, seperate with a SPACE\n, (or 'a' for all) then ENTER:")
+    inputChoice = sys.stdin.readline()
+    if inputChoice == "a\n":
+        choice = range(len(liTest))
+    else:
+        choice = inputChoice.split()
+        try:
+            choice = [int(i) - 1 for i in choice]
+        except ValueError:
+            print("Input False")
+            return
+#    print(liTest)
+    for i in choice:
+        for j in range(20):
+            #print(liTest[i][1])
+#            print("/Exam/" + joinExam(*liTest[i][1]))
+            aConnection("/Exam/" + joinExam(*liTest[i][1]), stdNo)
+        format_output(80, 1, liTest[i][0] + "_end.txt")
+        format_output(80, 0, liTest[i][0] + "_inline.txt")
+        global li_1, li_2, li_3, li_4, li_5
+        li_1 = []
+        li_2 = []
+        li_3 = []
+        li_4 = []
+        li_5 = []
+
+CommandUI()
