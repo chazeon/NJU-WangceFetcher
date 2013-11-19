@@ -13,6 +13,8 @@ li_3 = []
 li_4 = []
 li_5 = []
 
+COOKIE = ""
+
 class MyHTMLParser(HTMLParser):
     ExamBody = False
     spanVerbatim = 0
@@ -63,49 +65,71 @@ class MyHTMLParser(HTMLParser):
         self.qNumber = ""
         self.bigType = ""
     def handle_starttag(self, tag, attrs):
-        if tag == "div" and ('class', 'QType') in attrs:
+        try:
+            getattr(self, "handle_starttag_" + tag)(attrs)
+        except AttributeError:
+            pass
+            
+    def handle_starttag_div(self, attrs):
+        if ('class', 'QType') in attrs:
             self.inQuestion = True
-        if tag == "div" and self.inQuestion:
+        if self.inQuestion:
             self.divVerbatim += 1
-        if tag == "span" and ('id', 'ExamBody') in attrs:
-            self.ExamBody = True
-        if tag == "span" and self.ExamBody == True:
-            self.spanVerbatim += 1
-        if tag == "div" and ('class', 'QName') in attrs:
+        if ('class', 'QName') in attrs:
             self.questionVerbatim = True
-        if tag == "div" and ('class', 'TypeTitle') in attrs:
+        if ('class', 'TypeTitle') in attrs:
             self.titleType = True
-        if tag == "input" and self.QType == "Filling" and self.questionStart == False and self.inBody and self.qNo == False and ('type', 'button') not in attrs:
-            self.QuestionPieces.append("______")
-            # Prob1
-        if tag == "div" and ('class', 'Body') in attrs:
+        if ('class', 'Body') in attrs:
             self.inBody = True
             self.inBodyVerbatim = self.divVerbatim
-        if tag == "span" and self.inBody == True:
-            self.qNo = True
-        if tag == "div" and ('class', 'ShowAnswerDiv') in attrs and self.QType == "Para":
+        if ('class', 'ShowAnswerDiv') in attrs and self.QType == "Para":
             self.pAnswer = True
             #Problem2
-        if tag == "strong" and self.QType == "Para":
+
+    def handle_starttag_span(self, attrs):
+            
+        if ('id', 'ExamBody') in attrs:
+            self.ExamBody = True
+        if self.ExamBody == True:
+            self.spanVerbatim += 1
+        if self.inBody == True:
+            self.qNo = True
+
+    def handle_starttag_input(self, attrs):
+        if self.QType == "Filling" and self.questionStart == False and self.inBody and self.qNo == False and ('type', 'button') not in attrs:
+            self.QuestionPieces.append("______")
+            # Prob1
+    def handle_starttag_strong(self, attrs):
+        if self.QType == "Para":
             self.pChoice = True
-        if tag == "p" and self.QType == "Para" and self.pChoice == True:
+    def handle_starttag_p(self, attrs):
+        if self.QType == "Para" and self.pChoice == True:
             self.pChoice = False
             self.pQuestion = True
             
         
     def handle_endtag(self, tag):
-        if tag == "span" and self.ExamBody == True:
+        try:
+            getattr(self, "handle_endtag_" + tag)()
+        except AttributeError:
+            pass
+    def handle_endtag_span(self):
+        if self.ExamBody == True:
             self.spanVerbatim -= 1
-        if tag == "span" and self.spanVerbatim == 0:
+        if self.spanVerbatim == 0:
             self.ExamBody = False
-        if tag == "span" and self.questionVerbatim == True and self.questionStart == False:
+        if self.questionVerbatim == True and self.questionStart == False:
             self.questionStart = True
-        if tag == "div" and self.questionStart == True:
+        if self.qNo == True:
+            self.qNo = False
+
+    def handle_endtag_div(self):
+        if self.questionStart == True:
             self.questionStart = False
             self.questionVerbatim = False
-        if tag == "div" and self.inBody == True and self.divVerbatim == self.inBodyVerbatim:
+        if self.inBody == True and self.divVerbatim == self.inBodyVerbatim:
             self.inBody = False
-        if tag == "div" and self.inQuestion:
+        if self.inQuestion:
             self.divVerbatim -= 1
             if self.divVerbatim == 0:
                 self.inQuestion = False
@@ -118,16 +142,14 @@ class MyHTMLParser(HTMLParser):
                 self.QuestionPieces = []
                 self.Choices = []
                 self.Answer = ""
-        if tag == "div" and self.titleType == True:
+        if self.titleType == True:
             self.titleType = False
-        if tag == "span" and self.qNo == True:
-            self.qNo = False
-        if tag == "div" and self.pAnswer == True:
+        if self.pAnswer == True:
             self.pAnswer = False
         #if tag == "strong" and self.pChoice == True:
         #    self.pChoice = False
         #    self.pQuestion = True
-        if tag == "div" and self.QType == "Para" and self.pQuestion == True:
+        if self.QType == "Para" and self.pQuestion == True:
             self.pQuestion = False
         
     def handle_data(self, data):
@@ -193,12 +215,9 @@ class MyHTMLParser(HTMLParser):
         print("(%s)" % ",".join(str(len(globals()["li_"+str(i)])) for i in range(1, 6)))
         
 def aConnection(url, stdNo):
+
     conn = http.client.HTTPConnection('172.25.54.72')
-    conn.request('GET', '/usercontrol/ajax.aspx?username=%d&pwd=%s&func=Login' % (stdNo, stdNo))
-    r0 = conn.getresponse()
-    cookie = r0.getheader('Set-Cookie')
-    conn = http.client.HTTPConnection('172.25.54.72')
-    conn.request('GET', url, headers={'Cookie': cookie})
+    conn.request('GET', url, headers={'Cookie': COOKIE})
     r1 = conn.getresponse()
     s = r1.read()
     fsave = open("save.out", "a")
@@ -207,11 +226,21 @@ def aConnection(url, stdNo):
     parser = MyHTMLParser()
     parser.feed(s.decode('utf-8'))
     parser.close()
+
+
+def Login(stdNo):
     conn = http.client.HTTPConnection('172.25.54.72')
-    conn.request('GET', '/usercontrol/ajax.aspx?func=LoginOut', headers={'Cookie': cookie})
+#    conn.request('POST', '/usercontrol/ajax.aspx', 'username=%d&pwd=%s&func=Login' % (stdNo, stdNo))
+    conn.request('GET', '/usercontrol/ajax.aspx?username=%d&pwd=%s&func=Login' % (stdNo, stdNo))
+    r0 = conn.getresponse()
+    global COOKIE
+    COOKIE = r0.getheader('Set-Cookie')
+
+def Logout():
+    conn = http.client.HTTPConnection('172.25.54.72')
+    conn.request('GET', '/usercontrol/ajax.aspx?func=LoginOut', headers={'Cookie': COOKIE})
     r2 = conn.getresponse()
     s = r2.read()
-
 
 def aLocal(url):
     fsock = open(url)
@@ -395,12 +424,9 @@ class ExamDirFecher(HTMLParser):
 def CommandUI():
     print("Please input number before Student Number:")
     stdNo = int(sys.stdin.readline())
+    Login(stdNo)
     conn = http.client.HTTPConnection('172.25.54.72')
-    conn.request('GET', '/usercontrol/ajax.aspx?username=%d&pwd=%s&func=Login' % (stdNo, stdNo))
-    r0 = conn.getresponse()
-    cookie = r0.getheader('Set-Cookie')
-    conn = http.client.HTTPConnection('172.25.54.72')
-    conn.request('GET', '/Exam/User_Test_Query.aspx', headers={'Cookie': cookie})
+    conn.request('GET', '/Exam/User_Test_Query.aspx', headers={'Cookie': COOKIE})
     r1 = conn.getresponse()
     s = r1.read()
 #    print(s.decode('utf-8'))
@@ -439,5 +465,9 @@ def CommandUI():
         li_4 = []
         li_5 = []
         t2 = time.clock()
+    Logout()
 
-CommandUI()
+try:
+    CommandUI()
+except KeyboardInterrupt:
+    Logout()
