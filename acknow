@@ -1,12 +1,15 @@
 ================================================================================
 INFORMATION:
 
-Program created by: ............................................... Luo Chenxing
+Program created by: %s
 Platform: %s
 Python: %s
 Program updated on: %s
+Program Licence: %s
 Program Checksum: %s
 Configuration Checksum: %s
+GitHub Repository: %s
+Link: %s
 
 Applause to those teachers who edited and arranged these exercises and to those engineers who run the online system.
 ================================================================================

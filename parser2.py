@@ -1,11 +1,34 @@
-#coding:utf-8
+#!/usr/bin/python3
+# coding:utf-8
+
+import sys
+if sys.version_info.major < 3:
+    print("Please use Python 3 or above, you are using Python %d.%d.%d\n" % (sys.version_info.major, sys.version_info.minor, sys.version_info.micro))
+    quit()
+
 from html.parser import HTMLParser
 import re
 import http.client
 import sys
 import os
 import urllib.parse
-import time
+import time, platform, hashlib
+import json
+
+__author__ = "Luo Chenxing"
+__copyright__ = "Copyright 2014, Luo Chenxing"
+__credits__ = ["Luo Chenxing"]
+__license__ = "GPLv3"
+__version__ = "1.0.0"
+__maintainer__ = "Luo Chenxing"
+__email__ = "chenxing.luo@gmail.com"
+__status__ = "Production"
+__githubrepo__ = "chazeon/NJU-WangceFetcher"
+__link__ = "https://github.com/chazeon/NJU-WangceFetcher"
+
+fsock = open("conf.json")
+settings = json.load(fsock)
+fsock.close
 
 li_1 = []
 li_2 = []
@@ -193,21 +216,21 @@ class MyHTMLParser(HTMLParser):
         print("(%s)" % ",".join(str(len(globals()["li_"+str(i)])) for i in range(1, 6)))
         
 def aConnection(url, stdNo):
-    conn = http.client.HTTPConnection('172.25.54.72')
+    conn = http.client.HTTPConnection(globals()['settings']['url'])
     conn.request('GET', '/usercontrol/ajax.aspx?username=%d&pwd=%s&func=Login' % (stdNo, stdNo))
     r0 = conn.getresponse()
     cookie = r0.getheader('Set-Cookie')
-    conn = http.client.HTTPConnection('172.25.54.72')
+    conn = http.client.HTTPConnection(globals()['settings']['url'])
     conn.request('GET', url, headers={'Cookie': cookie})
     r1 = conn.getresponse()
     s = r1.read()
-    fsave = open("save.out", "a")
-    fsave.write(s.decode('utf-8'))
+    #fsave = open("save.out", "a")
+    #fsave.write(s.decode('utf-8'))
 #    print(s.decode('utf-8'))
     parser = MyHTMLParser()
     parser.feed(s.decode('utf-8'))
     parser.close()
-    conn = http.client.HTTPConnection('172.25.54.72')
+    conn = http.client.HTTPConnection(globals()['settings']['url'])
     conn.request('GET', '/usercontrol/ajax.aspx?func=LoginOut', headers={'Cookie': cookie})
     r2 = conn.getresponse()
     s = r2.read()
@@ -221,7 +244,7 @@ def aLocal(url):
     parser.feed(s)
     parser.close()
 
-def format_output(length = 80, answertype = 0, debug = 0):
+def format_output(length = globals()['settings']["LineLength"], answertype = 0, debug = 0):
     if debug == 0:
         outsave = sys.stdout
         fsock = open("output.txt", "w")
@@ -231,12 +254,31 @@ def format_output(length = 80, answertype = 0, debug = 0):
         fsock = open(debug, "w")
         sys.stdout = fsock
     counter = 0
+    print(os.path.splitext(debug)[0])
+    print("Updated: " + time.asctime())
+    print("")
+    facknow = open("acknow")
+    acknow = facknow.read()
+    facknow.close()
+    platform_info = (
+        #(" " + " ".join(platform.dist())).rjust(70, "."),
+        (" " +__author__).rjust(length - 20, "."),
+        (" " +platform.platform().replace("-", " ")).rjust(length - 10, "."),
+        (" " + sys.version.replace("\n", "")).rjust(length - 8, "."),
+        (" " + time.ctime(os.stat(__file__).st_mtime)).rjust(length - 20, "."),
+        (" " +__license__).rjust(length - 17, "."),
+        (" " + hashlib.md5(open(__file__).read().encode()).hexdigest()).rjust(length - 18, "."),
+        (" " + hashlib.md5(open("conf.json").read().encode()).hexdigest()).rjust(length - 24, "."),
+        (" " +__githubrepo__).rjust(length - 19, "."),
+        (" " +__link__).rjust(length - 6, ".")
+    )
+    print(acknow % platform_info)
     print("".ljust(length,"="))
-    print("I. 选择题：")
+    print(globals()['settings']["SectionNames"][0])
     print("".ljust(length,"-"))
     for j in range(1, 4):
         print("".ljust(length, "-"))
-        print("PART", j)
+        print("PART", j, globals()['settings']["Section1PartNames"][j - 1])
         print("".ljust(length, "-"))
         for i in globals()["li_" + str(j)]:
             counter += 1
@@ -250,19 +292,19 @@ def format_output(length = 80, answertype = 0, debug = 0):
                 for c in i[2]:
                     print(c)
             if answertype == 0:
-                print("答案：", i[3])
+                print(globals()['settings']["AnswerName"], i[3])
             print("")
     print("".ljust(length,"="))
-    print("II. 填空题：")
+    print(globals()['settings']["SectionNames"][1])
     print("".ljust(length,"-"))
     for i in li_4:
         counter += 1 
         print("%d. %s" % (counter, i[1]))
         if answertype == 0:
-            print("答案：", i[3].replace("^", " "))
+            print(globals()['settings']["AnswerName"], i[3].replace("^", " "))
         print("")
     print("".ljust(length,"="))
-    print("III. 完形：")
+    print(globals()['settings']["SectionNames"][2])
     print("".ljust(length,"-"))
     for i in li_5:
         counter += 1
@@ -273,11 +315,11 @@ def format_output(length = 80, answertype = 0, debug = 0):
 #            print("Index ERROR:" ,i)
         print(i[2][0])
         if answertype == 0:
-            print("答案：", i[3].replace("^", " "))
+            print(globals()['settings']["AnswerName"], i[3].replace("^", " "))
         print("")        
     if answertype == 1:
         counter = 0
-        print("答案")
+        print(globals()['settings']["AnswerName"])
         for j in range(1, 4):
             for i in globals()["li_" + str(j)]:
                 counter += 1
@@ -393,13 +435,25 @@ class ExamDirFecher(HTMLParser):
         return self.liTest
 
 def CommandUI():
-    print("Please input number before Student Number:")
-    stdNo = int(sys.stdin.readline())
-    conn = http.client.HTTPConnection('172.25.54.72')
+    print("A Nanjing University English Only Test System Parser\n")
+    print('''Copyright (C) 2014 Luo Chenxing
+License GPLv3: GNU GPL version 3 <http://gnu.org/licenses/gpl.html>
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.
+''')
+    if globals()["settings"]["StudentNumber"] == 0:
+        print("Please input number before Student Number:")
+        stdNo_str = sys.stdin.readline().replace("\n", "")
+        if stdNo_str == "":
+            quit()
+        stdNo = int(stdNo_str)
+    else:
+        stdNo = globals()["settings"]["StudentNumber"]
+    conn = http.client.HTTPConnection(globals()['settings']['url'])
     conn.request('GET', '/usercontrol/ajax.aspx?username=%d&pwd=%s&func=Login' % (stdNo, stdNo))
     r0 = conn.getresponse()
     cookie = r0.getheader('Set-Cookie')
-    conn = http.client.HTTPConnection('172.25.54.72')
+    conn = http.client.HTTPConnection(globals()['settings']['url'])
     conn.request('GET', '/Exam/User_Test_Query.aspx', headers={'Cookie': cookie})
     r1 = conn.getresponse()
     s = r1.read()
@@ -412,9 +466,12 @@ def CommandUI():
     for i in liTest:
         counter += 1
         print(str("[" + str(counter) + "]").ljust(3), i[0])
-    print("Please input number before title, seperate with a SPACE\n, (or 'a' for all) then ENTER:")
-    inputChoice = sys.stdin.readline()
-    if inputChoice == "a\n":
+    if globals()["settings"]["DownloadPart"] == "":
+        print("Please input number before title, seperate with a SPACE\n, (or 'a' for all) then ENTER:")
+        inputChoice = input().replace('\n', '')
+    else:
+        inputChoice = globals()["settings"]["DownloadPart"]
+    if inputChoice == "a":
         choice = range(len(liTest))
     else:
         choice = inputChoice.split()
@@ -426,7 +483,7 @@ def CommandUI():
 #    print(liTest)
     for i in choice:
         t1 = time.clock()
-        for j in range(20):
+        for j in range(globals()["settings"]["RoundsOfFetch"]):
             #print(liTest[i][1])
 #            print("/Exam/" + joinExam(*liTest[i][1]))
             aConnection("/Exam/" + joinExam(*liTest[i][1]), stdNo)
