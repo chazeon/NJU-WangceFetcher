@@ -37,3 +37,14 @@ nosetests.xml
 
 # Temp Files
 *~
+*.swp
+
+# My Folders
+English*/
+
+# Temporary Output
+*.txt
+*.out
+
+# Old version of tries
+parser3.py
