@@ -2,7 +2,7 @@
     "StudentNumber": 0,
     "DownloadPart": "",
     "url": "114.212.113.243",
-    "AnswerName" : "Answer: ",
+    "AnswerName" : "Answer:",
     "SectionNames": ["I. Multiple Choice", "II. Filling", "III. Close"],
     "Section1PartNames": ["", "", ""],
     "LineLength": 80,

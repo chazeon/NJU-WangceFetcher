@@ -166,9 +166,9 @@ class MyHTMLParser(HTMLParser):
         if self.inBody and self.questionStart == False and self.QType == "Filling" and self.qNo == False:
             self.QuestionPieces.append(data)
         if re.search('正确答案：', data) != None:
-            self.Answer = data[5:]
+            self.Answer = data.replace('正确答案：', '')
         if self.pAnswer == True and data != "正确答案：":
-            self.Answer = data[5:]
+            self.Answer = data.replace('正确答案：', '')
         if self.pChoice == True and self.QType == "Para":
 #            print(data)
             if self.Choices == []:
